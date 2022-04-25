@@ -10,6 +10,10 @@ var uniqid = require('uniqid');
 const sdk = require('node-appwrite');
 let client = new sdk.Client();
 
+client
+    .setEndpoint('http://localhost:50/v1') // Your API Endpoint
+    .setProject('625ac97006dc2d58b12c')
+
 app.use(express.json({ limit: "50mb" }))
 
 app.use((req, res, next) => {
@@ -19,24 +23,23 @@ app.use((req, res, next) => {
     next()
 })
 
-app.post("/login", (req, res, next) => {
-    const {name, email, password} = req.body
+app.post("/signup", (req, res, next) => {
+    const { name, email, password } = req.body
     let users = new sdk.Users(client);
 
-    client
-        .setEndpoint('http://localhost:50/v1') // Your API Endpoint
-        .setProject('625ac97006dc2d58b12c')
-        .setKey(process.env.API_KEY) // Your secret API key
-        ;
+    client.setKey(process.env.API_KEY) // Your secret API key
 
     let promise = users.create('unique()', email, password, name);
 
     promise.then(function (response) {
         console.log(response);
+        res.json({ message: "User Created" })
     }, function (error) {
-        console.log(error);
+        console.log(error)
+        res.json({ message: "An error occured" })
     });
 })
+
 
 app.post("/image", (req, res, next) => {
     let storage = new sdk.Storage(client);
@@ -45,11 +48,7 @@ app.post("/image", (req, res, next) => {
     const imageName = `images/${uniqid('image-')}.png`
     const jwt = req.get("Authorization").split(" ")[1]
     fs.writeFile(imageName, base64Data, 'base64', function (err) {
-        client
-            .setEndpoint('http://localhost:50/v1') // Your API Endpoint
-            .setProject('625ac97006dc2d58b12c')
-            .setJWT(jwt)
-
+        client.setJWT(jwt)
         const imagePath = path.join(__dirname, imageName)
         const readstream = fs.createReadStream(imagePath).path
 
