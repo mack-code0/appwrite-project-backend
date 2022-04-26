@@ -11,8 +11,8 @@ const sdk = require('node-appwrite');
 let client = new sdk.Client();
 
 client
-    .setEndpoint('http://localhost:50/v1') // Your API Endpoint
-    .setProject('625ac97006dc2d58b12c')
+    .setEndpoint(process.env.PROJECT_ENDPOINT)
+    .setProject(process.env.PROJECT_ID)
 
 app.use(express.json({ limit: "50mb" }))
 
@@ -52,7 +52,7 @@ app.post("/image", (req, res, next) => {
         const imagePath = path.join(__dirname, imageName)
         const readstream = fs.createReadStream(imagePath).path
 
-        let promise = storage.createFile('625dd10f9ec7b3279649', 'unique()', readstream);
+        let promise = storage.createFile(process.env.BUCKET_ID, 'unique()', readstream);
         promise.then(function (response) {
             fs.unlink(imagePath, () => {
                 return res.status(200).json({ message: "successfull" })
@@ -65,18 +65,5 @@ app.post("/image", (req, res, next) => {
         });
     });
 })
-
-// const readst = fs.createReadStream(path.join(__dirname, 'images/out.png')).path
-// // console.log("-----------------------------");
-
-// let promise = storage.createFile('625dd10f9ec7b3279649', 'unique()', readst);
-
-// promise.then(function (response) {
-//     console.log(response);
-// }, function (error) {
-//     console.log("first")
-//     console.log(error);
-// });
-
 
 app.listen(7000)
