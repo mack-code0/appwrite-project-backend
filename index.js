@@ -38,30 +38,35 @@ app.post("/signup", (req, res, next) => {
 })
 
 
+// app.post("/image", async (req, res, next) => {
+
+// })
+
 app.post("/image", (req, res, next) => {
     let storage = new sdk.Storage(client);
 
     var base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
     const userName = req.body.userName
     const receiptId = req.body.receiptId
-    const imageName = `images/${userName}-Receipt-${receiptId}.png`
     const jwt = req.get("Authorization").split(" ")[1]
+
+    const imageName = `images/${userName}-Receipt-${receiptId}.png`
     fs.writeFile(imageName, base64Data, 'base64', function (err) {
         client.setJWT(jwt)
+        
         const imagePath = path.join(__dirname, imageName)
-        const readstream = fs.createReadStream(imagePath).path
-
-        let promise = storage.createFile(process.env.BUCKET_ID, receiptId, readstream);
+        let promise = storage.createFile(process.env.BUCKET_ID, receiptId, imagePath);
         promise.then(function (response) {
             fs.unlink(imagePath, () => {
                 return res.status(200).json({ successfull: "successfull" })
             })
         }, function (error) {
-            console.log(error);
             fs.unlink(imagePath, () => {
                 return res.json({ error: "An error occured", status: error.code })
             })
-        });
+        }).catch(() => {
+            res.json({ error: "An error occured" })
+        })
     });
 })
 
