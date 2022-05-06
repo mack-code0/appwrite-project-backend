@@ -4,7 +4,6 @@ const app = express()
 require("dotenv").config()
 const fs = require('fs');
 const path = require("path")
-var uniqid = require('uniqid');
 
 
 const sdk = require('node-appwrite');
@@ -32,11 +31,9 @@ app.post("/signup", (req, res, next) => {
     let promise = users.create('unique()', email, password, name);
 
     promise.then(function (response) {
-        console.log(response);
-        res.json({ message: "User Created" })
+        res.status(200).json({ message: "User Created" })
     }, function (error) {
-        console.log(error)
-        res.json({ message: "An error occured" })
+        res.status(error.code).json({ error: "An error occured" })
     });
 })
 
@@ -45,22 +42,24 @@ app.post("/image", (req, res, next) => {
     let storage = new sdk.Storage(client);
 
     var base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
-    const imageName = `images/${uniqid('image-')}.png`
+    const userName = req.body.userName
+    const receiptId = req.body.receiptId
+    const imageName = `images/${userName}-Receipt-${receiptId}.png`
     const jwt = req.get("Authorization").split(" ")[1]
     fs.writeFile(imageName, base64Data, 'base64', function (err) {
         client.setJWT(jwt)
         const imagePath = path.join(__dirname, imageName)
         const readstream = fs.createReadStream(imagePath).path
 
-        let promise = storage.createFile(process.env.BUCKET_ID, 'unique()', readstream);
+        let promise = storage.createFile(process.env.BUCKET_ID, receiptId, readstream);
         promise.then(function (response) {
             fs.unlink(imagePath, () => {
-                return res.status(200).json({ message: "successfull" })
+                return res.status(200).json({ successfull: "successfull" })
             })
         }, function (error) {
             console.log(error);
             fs.unlink(imagePath, () => {
-                return res.status(400).json({ message: "An error occured" })
+                return res.json({ error: "An error occured", status: error.code })
             })
         });
     });
